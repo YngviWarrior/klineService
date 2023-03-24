@@ -19,12 +19,11 @@ func main() {
 	var db database.Database
 	db.CreatePool(50)
 
+	job.SyncKlineTable(&db)
 	go job.LiveStream(&db)
 
 	avgLoopChannel := make(chan bool)
 	aliveLoopChannel := make(chan bool)
-
-	job.SyncKlineTable(&db)
 
 	go job.AveragePrices(&db, &avgLoopChannel)
 	go job.AliveNotify(&db, &aliveLoopChannel)

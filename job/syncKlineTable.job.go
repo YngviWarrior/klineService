@@ -6,6 +6,7 @@ import (
 	"klineService/database/repositories/mysql"
 	"klineService/entities/kline"
 	"klineService/services"
+	"log"
 	"strconv"
 	"time"
 )
@@ -15,12 +16,11 @@ var klineRepo mysql.KlineRepositoryInterface = &mysql.KlineRepository{}
 var assetRepo mysql.AssetRepositoryInterface = &mysql.AssetRepository{}
 
 func SyncKlineTable(db *database.Database) {
-
 	conn := db.CreateConnection()
 	asset := assetRepo.List(nil, conn)
 	conn.Close()
 
-	fmt.Println("Syncronizing Klines")
+	log.Println("Syncronizing Klines")
 
 	for _, a := range asset {
 		conn := db.CreateConnection()
@@ -31,26 +31,30 @@ func SyncKlineTable(db *database.Database) {
 			continue
 		}
 
-		start := time.UnixMilli(int64(fMts.Mts))
-		end := start.Add(time.Hour)
+		start := time.UnixMilli(int64(fMts.Mts) / 1000)
+		end := start.Add(time.Hour * 5)
 
 		for end.Before(time.Now()) {
-			request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, start.Unix(), end.Unix(), 0)
+			request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, start.UnixMilli(), end.UnixMilli(), 0)
+
 			time.Sleep(time.Second)
-			end = end.Add(time.Hour)
+			end = end.Add(time.Hour * 5)
+
+			if !end.Before(time.Now()) {
+				request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, 0, end.UnixMilli(), 0)
+			}
 		}
 
-		end = end.Add(time.Hour)
-		request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, 0, end.Unix(), 0)
 	}
 
-	fmt.Println("Klines Syncronization is Finished")
+	log.Println("Klines Syncronization is Finished")
 }
 
 func request(db *database.Database, symbol string, asset uint64, start, end, limit int64) {
 	resp, _ := bybitService.GetKlines(symbol, "1m", start, end, limit)
 
 	if len(resp) == 0 {
+		fmt.Println("nada")
 		return
 	}
 

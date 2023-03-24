@@ -173,7 +173,7 @@ func (*KlineRepository) FindFirstMts(tx *sql.Tx, conn *sql.Conn, asset, assetQuo
 	defer stmt.Close()
 
 	err = stmt.QueryRow(asset, assetQuote, exchange).Scan(&c.Asset, &c.AssetQuote, &c.Exchange, &c.Close, &c.Mts)
-	fmt.Println(c)
+
 	switch {
 	case err == sql.ErrNoRows:
 	case err != nil:
