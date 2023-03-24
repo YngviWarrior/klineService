@@ -10,6 +10,23 @@ type GetServerTimestamp struct {
 	} `json:"result"`
 }
 
+type Kline struct {
+	Open_time string `json:"0"`
+	Open      string `json:"1"`
+	High      string `json:"2"`
+	Low       string `json:"3"`
+	Close     string `json:"4"`
+	Volume    string `json:"5"`
+}
+
+type KlineResponse struct {
+	RetCode int64   `json:"ret_code"`
+	RetMsg  string  `json:"ret_msg"`
+	Result  [][]any `json:"result"`
+	ExtCode any     `json:"ext_code"`
+	ExtInfo any     `json:"ext_info"`
+}
+
 type GetKlinesResponse struct {
 	RetCode int64         `json:"ret_code"`
 	RetMsg  string        `json:"ret_msg"`

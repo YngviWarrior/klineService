@@ -31,7 +31,7 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.AssetQuoteSymbol = v.AssetQuoteSymbol
 		a.Roc = v.Roc
 		a.Avg = v.Close
-		a.Period = "day"
+		a.Period = "Day"
 
 		rabbitMQ.SendAveragePrice(&a)
 	}
@@ -50,7 +50,7 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.AssetQuoteSymbol = v.AssetQuoteSymbol
 		a.Roc = v.Roc
 		a.Avg = v.Close
-		a.Period = "week"
+		a.Period = "Week"
 
 		rabbitMQ.SendAveragePrice(&a)
 	}
@@ -69,7 +69,7 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.AssetQuoteSymbol = v.AssetQuoteSymbol
 		a.Roc = v.Roc
 		a.Avg = v.Close
-		a.Period = "month"
+		a.Period = "Month"
 
 		rabbitMQ.SendAveragePrice(&a)
 	}
@@ -95,26 +95,22 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		switch assetInfo.Exchange {
 		case 1:
 		case 2:
-			resp := ByBitInterface.GetKlines(&p)
+			resp, _ := ByBitInterface.GetKlines(p.Symbol, p.Interval, 0, 0, p.Limit)
 
-			if resp.RetCode != 0 {
+			if len(resp) == 0 {
 				continue
 			}
 
-			for i, v := range resp.Result {
-				for j, value := range v.([]interface{}) {
-					if j == 4 {
-						if i == 0 {
-							first = utils.ParseFloat(value.(string))
-						}
-
-						if i == len(resp.Result)-1 {
-							last = utils.ParseFloat(value.(string))
-						}
-
-						sum += utils.ParseFloat(value.(string))
-					}
+			for i, v := range resp {
+				if i == 0 {
+					first = utils.ParseFloat(v.Close)
 				}
+
+				if i == len(resp)-1 {
+					last = utils.ParseFloat(v.Close)
+				}
+
+				sum += utils.ParseFloat(v.Close)
 			}
 		}
 
@@ -132,7 +128,7 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.AssetQuoteSymbol = assetInfo.AssetQuoteSymbol
 		a.Roc = ((last / first) - 1) * 100
 		a.Avg = smaAvg
-		a.Period = "sma200"
+		a.Period = "Sma200"
 
 		rabbitMQ.SendAveragePrice(&a)
 	}

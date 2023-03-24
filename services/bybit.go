@@ -9,6 +9,7 @@ import (
 	asset "klineService/entities/asset"
 	kline "klineService/entities/kline"
 	bBR "klineService/services/byBitStructs"
+	bybitstructs "klineService/services/byBitStructs"
 	"klineService/services/bybit-api/ws"
 	"klineService/utils"
 	"log"
@@ -51,25 +52,34 @@ func (s *ByBit) ServerTimestamp() (response bBR.GetServerTimestamp) {
 	return
 }
 
-func (s *ByBit) GetKlines(params *bBR.GetKlinesParams) (response bBR.GetKlinesResponse) {
+func (s *ByBit) GetKlines(symbol string, resolution string, start, end, limit int64) (list []*bybitstructs.Kline, err error) {
 	client := &http.Client{}
 
 	req, err := http.NewRequest("GET", "https://api.bybit.com/spot/quote/v1/kline", nil)
 
 	if err != nil {
-		log.Println("BBGK 01: ", err)
-		return
+		log.Println("Req klines prepare: ", err)
 	}
 
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/json")
 
 	q := req.URL.Query()
-	q.Add("limit", fmt.Sprintf("%v", params.Limit))
-	q.Add("endTime", fmt.Sprintf("%v", params.EndTime))
-	q.Add("startTime", fmt.Sprintf("%v", params.StartTime))
-	q.Add("interval", params.Interval)
-	q.Add("symbol", params.Symbol)
+
+	if limit > 0 {
+		q.Add("limit", fmt.Sprintf("%v", limit))
+	}
+
+	if end > 0 {
+		q.Add("endTime", fmt.Sprintf("%v", end))
+	}
+
+	if start > 0 {
+		q.Add("startTime", fmt.Sprintf("%v", start))
+	}
+
+	q.Add("interval", resolution)
+	q.Add("symbol", symbol)
 
 	req.URL.RawQuery = q.Encode()
 
@@ -81,10 +91,37 @@ func (s *ByBit) GetKlines(params *bBR.GetKlinesParams) (response bBR.GetKlinesRe
 
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 
-	err = json.Unmarshal(bodyBytes, &response)
+	var res bybitstructs.KlineResponse
+	err = json.Unmarshal(bodyBytes, &res)
 
 	if err != nil {
-		log.Println("BBGK 02: ", err)
+		log.Println("json conv: ", err)
+	} else {
+		for _, v := range res.Result {
+			var k bybitstructs.Kline
+			for i, w := range v {
+				if i == 0 {
+					k.Open_time = fmt.Sprintf("%10.0f", w)
+				}
+				if i == 1 {
+					k.Open = fmt.Sprintf("%v", w)
+				}
+				if i == 2 {
+					k.High = fmt.Sprintf("%v", w)
+				}
+				if i == 3 {
+					k.Low = fmt.Sprintf("%v", w)
+				}
+				if i == 4 {
+					k.Close = fmt.Sprintf("%v", w)
+				}
+				if i == 5 {
+					k.Volume = fmt.Sprintf("%v", w)
+				}
+			}
+
+			list = append(list, &k)
+		}
 	}
 
 	defer resp.Body.Close()

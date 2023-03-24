@@ -5,6 +5,7 @@ import (
 	"klineService/entities/asset"
 	"klineService/entities/kline"
 	bBR "klineService/services/byBitStructs"
+	bybitstructs "klineService/services/byBitStructs"
 	dR "klineService/services/discordStructs"
 	rabbitmqstructs "klineService/services/rabbitMQStructs"
 )
@@ -33,7 +34,7 @@ type DiscordInterface interface {
 type ByBitInterface interface {
 	ServerTimestamp() (response bBR.GetServerTimestamp)
 	LiveKlines(db *database.Database, parities []*asset.Asset)
-	GetKlines(params *bBR.GetKlinesParams) (response bBR.GetKlinesResponse)
+	GetKlines(symbol string, resolution string, start, end, limit int64) (list []*bybitstructs.Kline, err error)
 }
 
 type BinanceInterface interface {

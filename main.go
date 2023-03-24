@@ -15,27 +15,28 @@ func main() {
 	if err != nil {
 		log.Fatal(".env file is missing")
 	}
-	// var DiscordInterface services.DiscordInterface = &services.Discord{}
 
 	var db database.Database
 	db.CreatePool(50)
 
 	go job.LiveStream(&db)
 
-	loopChannel := make(chan bool)
+	avgLoopChannel := make(chan bool)
 	aliveLoopChannel := make(chan bool)
 
-	go job.AveragePrices(&db, &loopChannel)
-	go job.AliveNotify(&loopChannel)
+	job.SyncKlineTable(&db)
+
+	go job.AveragePrices(&db, &avgLoopChannel)
+	go job.AliveNotify(&db, &aliveLoopChannel)
 
 	for {
 		select {
-		case <-loopChannel:
-			time.Sleep(time.Second * 60)
-			go job.AveragePrices(&db, &loopChannel)
+		case <-avgLoopChannel:
+			time.Sleep(time.Second * 15)
+			go job.AveragePrices(&db, &avgLoopChannel)
 		case <-aliveLoopChannel:
 			time.Sleep(time.Minute * 5)
-			go job.AliveNotify(&aliveLoopChannel)
+			go job.AliveNotify(&db, &aliveLoopChannel)
 		}
 	}
 }
