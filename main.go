@@ -4,7 +4,6 @@ import (
 	"klineService/database"
 	"klineService/job"
 	"log"
-	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -16,25 +15,24 @@ func main() {
 		log.Fatal(".env file is missing")
 	}
 
+	avgLoopChannel := make(chan bool)
+	aliveLoopChannel := make(chan bool)
+
 	var db database.Database
 	db.CreatePool(50)
 
 	job.SyncKlineTable(&db)
 	go job.LiveStream(&db)
 
-	avgLoopChannel := make(chan bool)
-	aliveLoopChannel := make(chan bool)
-
 	go job.AveragePrices(&db, &avgLoopChannel)
 	go job.AliveNotify(&db, &aliveLoopChannel)
+	log.Println("Kline Service is Running.")
 
 	for {
 		select {
 		case <-avgLoopChannel:
-			time.Sleep(time.Second * 15)
 			go job.AveragePrices(&db, &avgLoopChannel)
 		case <-aliveLoopChannel:
-			time.Sleep(time.Minute * 5)
 			go job.AliveNotify(&db, &aliveLoopChannel)
 		}
 	}

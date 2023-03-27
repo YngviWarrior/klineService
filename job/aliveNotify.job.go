@@ -25,5 +25,6 @@ func AliveNotify(db *database.Database, aliveLoopChannel *chan bool) {
 
 	conn.Close()
 
+	time.Sleep(time.Minute * 5)
 	*aliveLoopChannel <- true
 }

@@ -134,5 +134,7 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 	}
 
 	conn.Close()
+
+	time.Sleep(time.Second * 5)
 	*loopChannel <- true
 }

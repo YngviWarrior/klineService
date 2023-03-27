@@ -214,10 +214,13 @@ func (*KlineRepository) FindFirst(tx *sql.Tx, conn *sql.Conn, asset, assetQuote,
 
 func (*KlineRepository) FindAvg(tx *sql.Tx, conn *sql.Conn, from, to int64) (list []*entity.Kline) {
 	query := `
-		SELECT asset, asset_quote, exchange, AVG(close), (((MIN(close) - MAX(close)) / MAX(close)) * 100) as roc
-		FROM kline 
-		WHERE mts BETWEEN ? AND ?
-		GROUP BY asset, asset_quote, exchange`
+		SELECT k.asset, k.asset_quote, k.exchange, AVG(k.close), (((MIN(k.close) - MAX(k.close)) / MAX(k.close)) * 100) as roc,
+			a.symbol as asset_symbol, aq.symbol as asset_quote_symbol
+		FROM kline k 
+		JOIN asset a ON k.asset = a.asset 
+		JOIN asset aq ON k.asset_quote = aq.asset
+		WHERE k.mts BETWEEN ? AND ?
+		GROUP BY k.asset, k.asset_quote, k.exchange`
 
 	stmt, err := repositories.Prepare(tx, conn, query)
 
@@ -242,7 +245,7 @@ func (*KlineRepository) FindAvg(tx *sql.Tx, conn *sql.Conn, from, to int64) (lis
 	for res.Next() {
 		var c entity.Kline
 
-		err := res.Scan(&c.Asset, &c.AssetQuote, &c.Exchange, &c.Close, &c.Roc)
+		err := res.Scan(&c.Asset, &c.AssetQuote, &c.Exchange, &c.Close, &c.Roc, &c.AssetSymbol, &c.AssetQuoteSymbol)
 
 		if err != nil {
 			log.Panic("CRFA 03: ", err)
