@@ -13,9 +13,9 @@ type KlineRepository struct{}
 type KlineRepositoryInterface interface {
 	FindLastPrice(tx *sql.Tx, conn *sql.Conn, asset, asset_quote, exchange uint64) (close float64)
 	FindLimit(tx *sql.Tx, conn *sql.Conn, asset, asset_quote, exchange, limit int64) (list []*entity.Kline)
-	FindFirstMts(tx *sql.Tx, conn *sql.Conn, asset, asset_quote, exchange int64) (c entity.Kline)
+	FindFirstMts(tx *sql.Tx, conn *sql.Conn, asset, asset_quote, exchange int64, testnet bool) (c entity.Kline)
 	FindFirst(tx *sql.Tx, conn *sql.Conn, asset, asset_quote, exchange, from int64) (c entity.Kline)
-	FindAvg(tx *sql.Tx, conn *sql.Conn, from, to int64) (list []*entity.Kline)
+	FindAvg(tx *sql.Tx, conn *sql.Conn, from, to int64, testnet bool) (list []*entity.Kline)
 	Create(tx *sql.Tx, conn *sql.Conn, kline *entity.Kline) bool
 	CreateDirect(tx *sql.DB, kline *entity.Kline) bool
 }
@@ -91,9 +91,10 @@ func (*KlineRepository) CreateDirect(db *sql.DB, kline *entity.Kline) bool {
 		close = ` + fmt.Sprintf("%v", kline.Close) + `,
 		high = ` + fmt.Sprintf("%v", kline.High) + `,
 		low = ` + fmt.Sprintf("%v", kline.Low) + `,
-		volume = ` + fmt.Sprintf("%v", kline.Volume) + `
+		volume = ` + fmt.Sprintf("%v", kline.Volume) + `,
+		testnet = ` + fmt.Sprintf("%v", kline.TestNet) + `
 	`
-	query := `INSERT INTO kline(asset, asset_quote, exchange, mts, open, close, high, low, volume) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)` + constraint
+	query := `INSERT INTO kline(asset, asset_quote, exchange, mts, open, close, high, low, volume, testnet) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)` + constraint
 
 	stmt, err := db.Prepare(query)
 
@@ -104,7 +105,7 @@ func (*KlineRepository) CreateDirect(db *sql.DB, kline *entity.Kline) bool {
 
 	defer stmt.Close()
 
-	_, err = stmt.Exec(kline.Asset, kline.AssetQuote, kline.Exchange, (kline.Mts * 1000), kline.Open, kline.Close, kline.High, kline.Low, kline.Volume)
+	_, err = stmt.Exec(kline.Asset, kline.AssetQuote, kline.Exchange, (kline.Mts * 1000), kline.Open, kline.Close, kline.High, kline.Low, kline.Volume, kline.TestNet)
 
 	if err != nil {
 		log.Panicln("CRCD 02: ", err)
@@ -155,11 +156,11 @@ func (*KlineRepository) FindLimit(tx *sql.Tx, conn *sql.Conn, asset, assetQuote,
 	return
 }
 
-func (*KlineRepository) FindFirstMts(tx *sql.Tx, conn *sql.Conn, asset, assetQuote, exchange int64) (c entity.Kline) {
+func (*KlineRepository) FindFirstMts(tx *sql.Tx, conn *sql.Conn, asset, assetQuote, exchange int64, testnet bool) (c entity.Kline) {
 	query := `
 		SELECT asset, asset_quote, exchange, close, mts
 		FROM kline 
-		WHERE asset = ? AND asset_quote = ? AND exchange = ?
+		WHERE asset = ? AND asset_quote = ? AND exchange = ? AND testnet = ?
 		ORDER BY mts DESC
 		LIMIT 1`
 
@@ -172,7 +173,7 @@ func (*KlineRepository) FindFirstMts(tx *sql.Tx, conn *sql.Conn, asset, assetQuo
 
 	defer stmt.Close()
 
-	err = stmt.QueryRow(asset, assetQuote, exchange).Scan(&c.Asset, &c.AssetQuote, &c.Exchange, &c.Close, &c.Mts)
+	err = stmt.QueryRow(asset, assetQuote, exchange, testnet).Scan(&c.Asset, &c.AssetQuote, &c.Exchange, &c.Close, &c.Mts)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -212,14 +213,14 @@ func (*KlineRepository) FindFirst(tx *sql.Tx, conn *sql.Conn, asset, assetQuote,
 	return
 }
 
-func (*KlineRepository) FindAvg(tx *sql.Tx, conn *sql.Conn, from, to int64) (list []*entity.Kline) {
+func (*KlineRepository) FindAvg(tx *sql.Tx, conn *sql.Conn, from, to int64, testnet bool) (list []*entity.Kline) {
 	query := `
 		SELECT k.asset, k.asset_quote, k.exchange, AVG(k.close), (((MIN(k.close) - MAX(k.close)) / MAX(k.close)) * 100) as roc,
 			a.symbol as asset_symbol, aq.symbol as asset_quote_symbol
 		FROM kline k 
 		JOIN asset a ON k.asset = a.asset 
 		JOIN asset aq ON k.asset_quote = aq.asset
-		WHERE k.mts BETWEEN ? AND ?
+		WHERE k.testnet = ? AND k.mts BETWEEN ? AND ?
 		GROUP BY k.asset, k.asset_quote, k.exchange`
 
 	stmt, err := repositories.Prepare(tx, conn, query)
@@ -231,7 +232,7 @@ func (*KlineRepository) FindAvg(tx *sql.Tx, conn *sql.Conn, from, to int64) (lis
 
 	defer stmt.Close()
 
-	res, err := stmt.Query(from, to)
+	res, err := stmt.Query(testnet, from, to)
 
 	switch {
 	case err == sql.ErrNoRows:

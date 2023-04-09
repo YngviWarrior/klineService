@@ -12,5 +12,6 @@ type Kline struct {
 	High             float64 `json:"high"`
 	Low              float64 `json:"low"`
 	Volume           float64 `json:"volume"`
+	TestNet          bool    `json:"testnet"`
 	Roc              float64 `json:"roc"`
 }

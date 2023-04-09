@@ -55,6 +55,26 @@ type KLine struct {
 	Volume   string `json:"v"`
 }
 
+// V5
+// type KLine struct {
+// 	Type  string `json:"type"`
+// 	Topic string `json:"topic"`
+// 	Data  []struct {
+// 		Start     int64  `json:"start"` // 1539918000
+// 		End       int64  `json:"end"`   // 1539918000
+// 		Interval  int64  `json:"interval"`
+// 		Open      string `json:"open"`
+// 		Close     string `json:"close"`
+// 		High      string `json:"high"`
+// 		Low       string `json:"low"`
+// 		Volume    string `json:"volume"`
+// 		TurnOver  string `json:"turnover"`
+// 		Confirm   string `json:"confirm"`
+// 		Timestamp string `json:"timestamp"`
+// 	} `json:"data"`
+// 	Ts int64 `json:"ts"`
+// }
+
 // type KLine struct {
 // 	ID       int64   `json:"id"`        // 563
 // 	Symbol   string  `json:"symbol"`    // BTCUSD

@@ -1,30 +1,31 @@
 package job
 
 import (
+	"encoding/json"
 	"fmt"
 	"klineService/database"
-	"klineService/database/repositories/mysql"
+	"klineService/entities/asset"
 	"klineService/entities/kline"
-	"klineService/services"
 	"log"
 	"strconv"
 	"time"
 )
 
-var bybitService services.ByBitInterface = &services.ByBit{}
-var klineRepo mysql.KlineRepositoryInterface = &mysql.KlineRepository{}
-var assetRepo mysql.AssetRepositoryInterface = &mysql.AssetRepository{}
+func (j *Job) SyncKlineTable(db *database.Database) {
+	assets := j.Redis.GetCache("Assets", "string")
 
-func SyncKlineTable(db *database.Database) {
-	conn := db.CreateConnection()
-	asset := assetRepo.List(nil, conn)
-	conn.Close()
+	var cachedSlice []*asset.Asset
+	err := json.Unmarshal([]byte(assets.(string)), &cachedSlice)
+
+	if err != nil {
+		log.Panic("Bybit liveKlines unMarshal: ", err)
+	}
 
 	log.Println("Syncronizing Klines")
 
-	for _, a := range asset {
+	for _, a := range cachedSlice {
 		conn := db.CreateConnection()
-		fMts := klineRepo.FindFirstMts(nil, conn, int64(a.Asset), 1, 2)
+		fMts := j.KlineRepo.FindFirstMts(nil, conn, int64(a.Asset), 1, 2, j.Test)
 		conn.Close()
 
 		if (fMts == kline.Kline{}) {
@@ -35,13 +36,13 @@ func SyncKlineTable(db *database.Database) {
 		end := start.Add(time.Hour * 5)
 
 		for end.Before(time.Now()) {
-			request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, start.UnixMilli(), end.UnixMilli(), 0)
+			j.request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, start.UnixMilli(), end.UnixMilli(), 0)
 
 			time.Sleep(time.Second)
 			end = end.Add(time.Hour * 5)
 
 			if !end.Before(time.Now()) {
-				request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, 0, end.UnixMilli(), 0)
+				j.request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, 0, end.UnixMilli(), 0)
 			}
 		}
 
@@ -50,11 +51,10 @@ func SyncKlineTable(db *database.Database) {
 	log.Println("Klines Syncronization is Finished")
 }
 
-func request(db *database.Database, symbol string, asset uint64, start, end, limit int64) {
-	resp, _ := bybitService.GetKlines(symbol, "1m", start, end, limit)
+func (j *Job) request(db *database.Database, symbol string, asset uint64, start, end, limit int64) {
+	resp, _ := j.ByBitInterface.GetKlines("spot", symbol, "1", start, end, limit)
 
 	if len(resp) == 0 {
-		fmt.Println("nada")
 		return
 	}
 
@@ -73,6 +73,6 @@ func request(db *database.Database, symbol string, asset uint64, start, end, lim
 		c.Low, _ = strconv.ParseFloat(v.Low, 64)
 		c.Volume, _ = strconv.ParseFloat(v.Volume, 64)
 
-		klineRepo.CreateDirect(db.Pool, &c)
+		j.KlineRepo.CreateDirect(db.Pool, &c)
 	}
 }

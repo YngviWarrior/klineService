@@ -266,6 +266,7 @@ func (b *ByBitWS) processMessage(messageType int, data []byte) {
 
 	if topicValue := ret.Get("topic"); topicValue.Exists() {
 		topic := topicValue.String()
+
 		if strings.HasPrefix(topic, topicOrderBook25l1prefix) {
 			symbol := topic[len(topicOrderBook25l1prefix):]
 			type_ := ret.Get("type").String()
@@ -392,4 +393,8 @@ func (b *ByBitWS) handlePong() (err error) {
 
 func (b *ByBitWS) CloseAndReconnect() {
 	b.conn.CloseAndReconnect()
+}
+
+func (b *ByBitWS) Close() {
+	b.conn.Close()
 }

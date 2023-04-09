@@ -2,25 +2,19 @@ package job
 
 import (
 	"klineService/database"
-	"klineService/database/repositories/mysql"
-	"klineService/services"
 	bybitstructs "klineService/services/byBitStructs"
 	rabbitmqstructs "klineService/services/rabbitMQStructs"
 	"klineService/utils"
 	"time"
 )
 
-func AveragePrices(db *database.Database, loopChannel *chan bool) {
-	var rabbitMQ services.RabbitMQInterface = &services.RabbitMQ{}
-	var klineRepo mysql.KlineRepositoryInterface = &mysql.KlineRepository{}
-	// var assetRepo mysql.AssetRepositoryInterface = &mysql.AssetRepository{}
-
+func (j *Job) AveragePrices(db *database.Database, loopChannel *chan bool) {
 	conn := db.CreateConnection()
 
 	to := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().Hour(), time.Now().Minute(), time.Now().Second(), time.Now().Nanosecond(), time.Local)
 	from := time.Date(to.Year(), to.Month(), to.Day()-1, to.Hour(), to.Minute(), to.Second(), to.Nanosecond(), time.Local)
 
-	dayList := klineRepo.FindAvg(nil, conn, from.UnixMicro(), to.UnixMicro())
+	dayList := j.KlineRepo.FindAvg(nil, conn, from.UnixMicro(), to.UnixMicro(), j.Test)
 
 	for _, v := range dayList {
 		var a rabbitmqstructs.InputAvgMessageDto
@@ -33,13 +27,13 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.Avg = v.Close
 		a.Period = "Day"
 
-		rabbitMQ.SendAveragePrice(&a)
+		j.RabbitMQ.SendAveragePrice(&a)
 	}
 
 	to = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().Hour(), time.Now().Minute(), time.Now().Second(), time.Now().Nanosecond(), time.Local)
 	from = time.Date(to.Year(), to.Month(), to.Day()-7, to.Hour(), to.Minute(), to.Second(), to.Nanosecond(), time.Local)
 
-	weekList := klineRepo.FindAvg(nil, conn, from.UnixMicro(), to.UnixMicro())
+	weekList := j.KlineRepo.FindAvg(nil, conn, from.UnixMicro(), to.UnixMicro(), j.Test)
 
 	for _, v := range weekList {
 		var a rabbitmqstructs.InputAvgMessageDto
@@ -52,13 +46,13 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.Avg = v.Close
 		a.Period = "Week"
 
-		rabbitMQ.SendAveragePrice(&a)
+		j.RabbitMQ.SendAveragePrice(&a)
 	}
 
 	to = time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().Hour(), time.Now().Minute(), time.Now().Second(), time.Now().Nanosecond(), time.Local)
 	from = time.Date(to.Year(), to.Month(), to.Day()-30, to.Hour(), to.Minute(), to.Second(), to.Nanosecond(), time.Local)
 
-	monthList := klineRepo.FindAvg(nil, conn, from.UnixMicro(), to.UnixMicro())
+	monthList := j.KlineRepo.FindAvg(nil, conn, from.UnixMicro(), to.UnixMicro(), j.Test)
 
 	for _, v := range monthList {
 		var a rabbitmqstructs.InputAvgMessageDto
@@ -71,10 +65,9 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.Avg = v.Close
 		a.Period = "Month"
 
-		rabbitMQ.SendAveragePrice(&a)
+		j.RabbitMQ.SendAveragePrice(&a)
 	}
 
-	var ByBitInterface services.ByBitInterface = &services.ByBit{}
 	var p bybitstructs.GetKlinesParams
 
 	for _, assetInfo := range dayList {
@@ -89,13 +82,13 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 			p.Symbol = "ETHUSDT"
 		}
 
-		p.Interval = "1d"
+		p.Interval = "1"
 		p.Limit = 200
 
 		switch assetInfo.Exchange {
 		case 1:
 		case 2:
-			resp, _ := ByBitInterface.GetKlines(p.Symbol, p.Interval, 0, 0, p.Limit)
+			resp, _ := j.ByBitInterface.GetKlines("spot", p.Symbol, p.Interval, 0, 0, p.Limit)
 
 			if len(resp) == 0 {
 				continue
@@ -130,7 +123,7 @@ func AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.Avg = smaAvg
 		a.Period = "Sma200"
 
-		rabbitMQ.SendAveragePrice(&a)
+		j.RabbitMQ.SendAveragePrice(&a)
 	}
 
 	conn.Close()

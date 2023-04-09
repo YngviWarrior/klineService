@@ -1,9 +1,10 @@
 package services
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	database "klineService/database"
-	repository "klineService/database/repositories/mysql"
 	asset "klineService/entities/asset"
 	kline "klineService/entities/kline"
 	"klineService/utils"
@@ -12,14 +13,18 @@ import (
 	"github.com/adshao/go-binance/v2"
 )
 
-var binanceBaseUrl string = "https://api.binance.com"
+func (s *Binance) LiveKlines(ctx context.Context, db *database.Database, quitChannel *chan bool) {
+	assets := s.Redis.GetCache("Assets", "string")
 
-func (s *Binance) LiveKlines(db *database.Database, parities []*asset.Asset) {
-	var klineRepoInterface repository.KlineRepositoryInterface = &repository.KlineRepository{}
-	var rabbitmq RabbitMQInterface = &RabbitMQ{}
+	var cachedSlice []*asset.Asset
+	err := json.Unmarshal([]byte(assets.(string)), &cachedSlice)
+
+	if err != nil {
+		log.Panic("Binance liveKlines unMarshal 01: ", err)
+	}
 
 	klines := make(map[string]string)
-	for _, v := range parities {
+	for _, v := range cachedSlice {
 		if v.Symbol == "BRL" {
 			klines[fmt.Sprintf("USDT%s", v.Symbol)] = "1m"
 		} else if v.Symbol != "USDT" {
@@ -30,25 +35,21 @@ func (s *Binance) LiveKlines(db *database.Database, parities []*asset.Asset) {
 	wsKlineHandler := func(info *binance.WsKlineEvent) {
 		var k kline.Kline
 
-		switch info.Symbol {
-		case "BTCUSDT":
-			k.Asset = 3
-			k.AssetSymbol = "BTC"
+		k.AssetQuote = 1
+		k.AssetQuoteSymbol = "USDT"
 
-			k.AssetQuote = 1
-			k.AssetQuoteSymbol = "USDT"
-		case "ETHUSDT":
-			k.Asset = 4
-			k.AssetSymbol = "ETH"
+		for _, asset := range cachedSlice {
+			if info.Symbol[:3] == asset.Symbol {
+				k.Asset = asset.Asset
+				k.AssetSymbol = asset.Symbol
+			}
 
-			k.AssetQuote = 1
-			k.AssetQuoteSymbol = "USDT"
-		case "USDTBRL":
-			k.Asset = 1
-			k.AssetSymbol = "USDT"
-
-			k.AssetQuote = 2
-			k.AssetQuoteSymbol = "BRL"
+			if info.Symbol[:4] == asset.Symbol {
+				k.Asset = asset.Asset
+				k.AssetSymbol = asset.Symbol
+				k.AssetQuote = 2
+				k.AssetQuoteSymbol = "BRL"
+			}
 		}
 
 		k.Exchange = 1
@@ -58,10 +59,11 @@ func (s *Binance) LiveKlines(db *database.Database, parities []*asset.Asset) {
 		k.High = utils.ParseFloat(info.Kline.High)
 		k.Low = utils.ParseFloat(info.Kline.Low)
 		k.Volume = utils.ParseFloat(info.Kline.Volume)
+		k.TestNet = s.TestAPI
 
-		go rabbitmq.SendCotation(&k)
+		go s.RabbitMQ.SendCotation(&k)
 
-		if !klineRepoInterface.CreateDirect(db.Pool, &k) {
+		if !s.KlineRepoInterface.CreateDirect(db.Pool, &k) {
 			return
 		}
 	}
@@ -70,10 +72,19 @@ func (s *Binance) LiveKlines(db *database.Database, parities []*asset.Asset) {
 		log.Panic("Socket Err 01: ", err)
 	}
 
-	_, _, err := binance.WsCombinedKlineServe(klines, wsKlineHandler, errHandler)
+	_, stop, err := binance.WsCombinedKlineServe(klines, wsKlineHandler, errHandler)
 
 	if err != nil {
 		log.Panic("Socket Err 02: ", err)
 		return
 	}
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				stop <- struct{}{}
+			}
+		}
+	}()
 }

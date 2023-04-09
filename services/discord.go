@@ -60,7 +60,7 @@ func (s *Discord) SendNotification(params *discordstructs.Notification) {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Println("Discord req exec: ", err)
+		log.Println("DSN 02: ", err)
 	}
 
 	defer resp.Body.Close()
