@@ -8,6 +8,7 @@ import (
 	"klineService/entities/kline"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -35,17 +36,21 @@ func (j *Job) SyncKlineTable(db *database.Database) {
 		start := time.UnixMilli(int64(fMts.Mts) / 1000)
 		end := start.Add(time.Hour * 5)
 
+		var count int64
 		for end.Before(time.Now()) {
 			j.request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, start.UnixMilli(), end.UnixMilli(), 0)
+			count++
 
 			time.Sleep(time.Second)
 			end = end.Add(time.Hour * 5)
 
 			if !end.Before(time.Now()) {
 				j.request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, 0, end.UnixMilli(), 0)
+				count++
 			}
 		}
 
+		log.Printf("%sUSDT Klines Syncronization Looped %d times", strings.ToUpper(a.Symbol), count)
 	}
 
 	log.Println("Klines Syncronization is Finished")
