@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"klineService/database"
 	discordstructs "klineService/services/discordStructs"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -15,7 +17,7 @@ func (j *Job) AliveNotify(db *database.Database, aliveLoopChannel *chan bool) {
 
 	var notify discordstructs.Notification
 	notify.Channel = "Health"
-	notify.Content = fmt.Sprintf("(%v) KlineService is Healthy! (BTCUSDT: %v, ETHUSDT: %v)", time.Now().Format("2006-01-02 15:04:05"), lastBtc, lastEth)
+	notify.Content = fmt.Sprintf("(%v) KlineService on %s mode is Healthy! (BTCUSDT: %v, ETHUSDT: %v)", time.Now().Format("2006-01-02 15:04:05"), strings.ToUpper(os.Getenv("ENVIROMENT")), lastBtc, lastEth)
 	j.DiscordInterface.SendNotification(&notify)
 
 	conn.Close()

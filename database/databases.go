@@ -48,12 +48,7 @@ func CreateMysqlPool(size int64) *sql.DB {
 	var db *sql.DB
 	var err error
 
-	switch os.Getenv("ENVIROMENT") {
-	case "dev":
-		db, err = sql.Open("mysql", os.Getenv("DB_DEV"))
-	default:
-		db, err = sql.Open("mysql", os.Getenv("DB_PROD"))
-	}
+	db, err = sql.Open("mysql", os.Getenv("DB"))
 
 	if err != nil {
 		log.Fatal("DC 01: ", err.Error())
@@ -66,7 +61,7 @@ func CreateMysqlPool(size int64) *sql.DB {
 }
 
 func CreatePostgresPool() *sql.DB {
-	db, err := sql.Open("postgres", os.Getenv("DB_DEV"))
+	db, err := sql.Open("postgres", os.Getenv("DB"))
 
 	if err != nil {
 		log.Fatal("DC 01: ", err.Error())

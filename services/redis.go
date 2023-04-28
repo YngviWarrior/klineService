@@ -11,7 +11,7 @@ import (
 )
 
 func (r *Redis) InitCache() {
-	CacheInstance.Client = funcs.Connect()
+	r.Client = funcs.Connect()
 
 	conn := r.Database.CreateConnection()
 	assets := r.AssetRepo.List(nil, conn)
@@ -23,15 +23,15 @@ func (r *Redis) InitCache() {
 		log.Panic("redis marshal: ", err)
 	}
 
-	CacheInstance.Client.Set(context.TODO(), "Assets", b, 0)
+	r.Client.Set(context.TODO(), "Assets", b, 0)
 }
 
 func (r *Redis) GetInstance() *redis.Client {
-	return CacheInstance.Client
+	return r.Client
 }
 
 func (r *Redis) GetCache(key, primitiveType string) (val any) {
-	cachedVal, err := CacheInstance.Client.Get(context.TODO(), key).Result()
+	cachedVal, err := r.Client.Get(context.TODO(), key).Result()
 
 	if err != nil {
 		// log.Println("Redis fetch cache error: ", err)

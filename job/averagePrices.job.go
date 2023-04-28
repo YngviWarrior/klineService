@@ -13,16 +13,18 @@ func (j *Job) AveragePrices(db *database.Database, loopChannel *chan bool) {
 
 	to := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), time.Now().Hour(), time.Now().Minute(), time.Now().Second(), time.Now().Nanosecond(), time.Local)
 	from := time.Date(to.Year(), to.Month(), to.Day()-1, to.Hour(), to.Minute(), to.Second(), to.Nanosecond(), time.Local)
-
+	// fmt.Println(j.Test)
 	dayList := j.KlineRepo.FindAvg(nil, conn, from.UnixMicro(), to.UnixMicro(), j.Test)
 
 	for _, v := range dayList {
+		// fmt.Println(v)
 		var a rabbitmqstructs.InputAvgMessageDto
 
 		a.Asset = v.Asset
 		a.AssetSymbol = v.AssetSymbol
 		a.AssetQuote = v.AssetQuote
 		a.AssetQuoteSymbol = v.AssetQuoteSymbol
+		a.Exchange = v.Exchange
 		a.Roc = v.Roc
 		a.Avg = v.Close
 		a.Period = "Day"
@@ -42,6 +44,7 @@ func (j *Job) AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.AssetSymbol = v.AssetSymbol
 		a.AssetQuote = v.AssetQuote
 		a.AssetQuoteSymbol = v.AssetQuoteSymbol
+		a.Exchange = v.Exchange
 		a.Roc = v.Roc
 		a.Avg = v.Close
 		a.Period = "Week"
@@ -61,6 +64,7 @@ func (j *Job) AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.AssetSymbol = v.AssetSymbol
 		a.AssetQuote = v.AssetQuote
 		a.AssetQuoteSymbol = v.AssetQuoteSymbol
+		a.Exchange = v.Exchange
 		a.Roc = v.Roc
 		a.Avg = v.Close
 		a.Period = "Month"
@@ -119,6 +123,7 @@ func (j *Job) AveragePrices(db *database.Database, loopChannel *chan bool) {
 		a.AssetSymbol = assetInfo.AssetSymbol
 		a.AssetQuote = assetInfo.AssetQuote
 		a.AssetQuoteSymbol = assetInfo.AssetQuoteSymbol
+		a.Exchange = assetInfo.Exchange
 		a.Roc = ((last / first) - 1) * 100
 		a.Avg = smaAvg
 		a.Period = "Sma200"

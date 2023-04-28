@@ -64,6 +64,3 @@ type ByBitInterface interface {
 type BinanceInterface interface {
 	LiveKlines(ctx context.Context, db *database.Database, quitChannel *chan bool)
 }
-
-// Global usage.
-var CacheInstance Redis

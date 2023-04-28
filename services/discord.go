@@ -9,7 +9,7 @@ import (
 )
 
 // curl -X POST https://discord.com/api/webhooks/1057831941514207282/AlQM4bvDA3DX1nFTiYwzMcZ0hKfgjWwlBndZd1g-FUblfglaLSFJmK9kZudQYiNJi2T9 -d '{"content":"testando"}' -H "Content-Type: application/json
-// curl -X POST https://discord.com/api/webhooks/1059954298458488893/4HA2jqowyFPmMuQJx1TnDWK8P2GrqUblpjuggX4pQt-dDxcXo_DDttgtQko-vdDa-rdo -d '{"content":"testando"}' -H "Content-Type: application/json
+// curl -X POST https://discord.com/api/webhooks/1100142896759447583/Z_mCLhoBAnIvi0bDNWgmf7Kvo7seaXLw7vW-Rr7Zf34K27iky1Vf2bP-qabcxxTH2mDF -d '{"content":"testando"}' -H "Content-Type: application/json
 // curl -X POST https://discord.com/api/webhooks/1059973551874129960/lNgjmyt3_Mt565GY6UQaKHquW7EvdzOVnRMKy9_HtTDSIf-oZoZNma70z9Jy67oOrt_X -d '{"content":"testando"}' -H "Content-Type: application/json
 // curl -X POST https://discord.com/api/webhooks/1060354322799546448/3Tfq9JvqYZ-DDHCgsMWX9BAkA1stSkcXayD9sG_mXhB7zfSCRz-OtGhyJe5CmtctuMxI -d '{"content":"testando"}' -H "Content-Type: application/json
 // curl -X POST https://discord.com/api/webhooks/1062894822710575105/gqgTByNIkh66frvpEAkKQDRl5Sql9qQRCL192HxXsJ_OZhmAmBhITPKLHjj5y9AG5yw- -d '{"content":"testando"}' -H "Content-Type: application/json
@@ -18,7 +18,7 @@ import (
 
 const discordBaseURL = "https://discord.com/api/webhooks"
 const OrderNotifyURL = "/1057831941514207282/AlQM4bvDA3DX1nFTiYwzMcZ0hKfgjWwlBndZd1g-FUblfglaLSFJmK9kZudQYiNJi2T9"
-const HealthStatusURL = "/1059954298458488893/4HA2jqowyFPmMuQJx1TnDWK8P2GrqUblpjuggX4pQt-dDxcXo_DDttgtQko-vdDa-rdo"
+const HealthStatusURL = "/1100142896759447583/Z_mCLhoBAnIvi0bDNWgmf7Kvo7seaXLw7vW-Rr7Zf34K27iky1Vf2bP-qabcxxTH2mDF"
 const OpenOperationURL = "/1059973551874129960/lNgjmyt3_Mt565GY6UQaKHquW7EvdzOVnRMKy9_HtTDSIf-oZoZNma70z9Jy67oOrt_X"
 const DebuggerURL = "/1060354322799546448/3Tfq9JvqYZ-DDHCgsMWX9BAkA1stSkcXayD9sG_mXhB7zfSCRz-OtGhyJe5CmtctuMxI"
 const NewOperationURL = "/1062894822710575105/gqgTByNIkh66frvpEAkKQDRl5Sql9qQRCL192HxXsJ_OZhmAmBhITPKLHjj5y9AG5yw-"

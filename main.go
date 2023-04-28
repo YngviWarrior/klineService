@@ -8,6 +8,7 @@ import (
 	"klineService/services"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -81,7 +82,7 @@ func main() {
 
 	go jobInterface.AveragePrices(&db, &avgLoopChannel)
 	go jobInterface.AliveNotify(&db, &aliveLoopChannel)
-	log.Println("Kline Service is Running.")
+	log.Printf("Kline Service is Running on %s mode.", strings.ToUpper(os.Getenv("ENVIROMENT")))
 
 	for {
 		select {
