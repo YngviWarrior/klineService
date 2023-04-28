@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -73,8 +74,8 @@ func main() {
 	aliveLoopChannel := make(chan bool)
 
 	// Start Functionalities
-	// time.Sleep(time.Second)
 	jobInterface.SyncKlineTable(&db)
+	time.Sleep(time.Second)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	go jobInterface.AssetManager(cancel, &db, &assetManageLoopChannel, &quitLoopChannel)

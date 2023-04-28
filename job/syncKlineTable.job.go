@@ -26,6 +26,7 @@ func (j *Job) SyncKlineTable(db *database.Database) {
 
 	for _, a := range cachedSlice {
 		conn := db.CreateConnection()
+
 		fMts := j.KlineRepo.FindFirstMts(nil, conn, int64(a.Asset), 1, 2, j.Test)
 		conn.Close()
 
@@ -37,14 +38,15 @@ func (j *Job) SyncKlineTable(db *database.Database) {
 		end := start.Add(time.Hour * 5)
 
 		var count int64
-		for end.Before(time.Now()) {
+		for start.Before(time.Now()) {
 			j.request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, start.UnixMilli(), end.UnixMilli(), 0)
 			count++
 
 			time.Sleep(time.Second)
+			start = start.Add(time.Hour * 5)
 			end = end.Add(time.Hour * 5)
 
-			if !end.Before(time.Now()) {
+			if !start.Before(time.Now()) {
 				j.request(db, fmt.Sprintf("%sUSDT", a.Symbol), a.Asset, 0, end.UnixMilli(), 0)
 				count++
 			}
