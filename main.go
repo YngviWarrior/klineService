@@ -21,6 +21,9 @@ func main() {
 		log.Fatal(".env file is missing")
 	}
 
+	loc, _ := time.LoadLocation("America/Sao_Paulo")
+	time.Local = loc
+
 	var j job.Job
 
 	switch os.Getenv("ENVIROMENT") {
