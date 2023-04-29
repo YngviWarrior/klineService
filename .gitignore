@@ -1,5 +1,5 @@
 .env
 .env.dev
-.env.prod
+.env.server
 .env.local
 .sql
