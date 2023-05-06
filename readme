@@ -1,0 +1,24 @@
+# Kline Service
+
+- Pre-requisites
+  
+  Go Version: 1.19 <br>
+  Docker, Docker-Composer <br>
+
+- Project Resume
+
+  Created to send real-time cryptoassets cotations, storage and process data into a message broker queue.
+
+- Setting up the project
+
+  Step 1: $ docker-compose up -d
+
+  Step 2: Open the project folder on terminal and execute the follow command: $ cat .sql | mysql -h 127.0.0.1 -u root -P 3307
+
+  Obs: the loopback IP (127.0.0.1) it's necessary !
+
+<b>The Project is Running !</b>
+
+- If is needed Reboot the project
+
+  $ docker-compose down && docker-compose up -d

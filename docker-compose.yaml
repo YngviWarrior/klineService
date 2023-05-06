@@ -1,0 +1,53 @@
+version: "3.7"
+
+services:
+  financialdb:
+    image: mysql
+    restart: always
+    # logging:
+      # driver: none
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+    volumes:
+      - data:/var/lib/mysql
+      - ./my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - finance_net
+  rabbitServer:
+    image: rabbitmq:3-management
+    environment:
+        RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+        RABBITMQ_DEFAULT_USER: "rabbitmq"
+        RABBITMQ_DEFAULT_PASS: "rabbitmq"
+        RABBITMQ_DEFAULT_VHOST: "/"
+    networks:
+      - finance_net
+    ports:
+      - 15672:15672
+      - 5672:5672
+  redisServer:
+    image: redis
+    networks:
+      - finance_net
+    ports:
+      - 6379:6379
+  klineservice:
+    image: yngviwarrior/klineservice:server
+    restart: always
+    # logging:
+      # driver: none
+    networks:
+      - finance_net
+    depends_on:
+    - financialdb
+    - rabbitServer
+    - redisServer
+
+volumes:
+  data:
+
+networks:
+  finance_net:
+    driver: bridge
