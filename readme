@@ -2,8 +2,11 @@
 
 - Pre-requisites
   
+  
   Go Version: 1.19 <br>
-  Docker, Docker-Composer <br>
+  Docker <br>
+  Docker-Composer <br>
+  RabbitMQ <br>
 
 - Project Resume
 
@@ -22,3 +25,6 @@
 - If is needed Reboot the project
 
   $ docker-compose down && docker-compose up -d
+
+- See your data: mysql -h 127.0.0.1 -u root -P 3307 kline
+- To see all data, live and processed, implement an consumer into the project network
