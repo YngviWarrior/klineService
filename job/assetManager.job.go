@@ -14,6 +14,11 @@ func (j *Job) AssetManager(cancel context.CancelFunc, db *database.Database, ass
 	assets := j.AssetRepo.List(nil, conn)
 	conn.Close()
 
+	if len(assets) == 0 {
+		log.Println("JOB AssetManager: No assets found")
+		return
+	}
+
 	cachedAssets := j.Redis.GetCache("Assets", "string")
 
 	var cachedSlice []*asset.Asset

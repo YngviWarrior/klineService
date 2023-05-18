@@ -15,11 +15,15 @@ import (
 func (j *Job) SyncKlineTable(db *database.Database) {
 	assets := j.Redis.GetCache("Assets", "string")
 
+	if assets == nil {
+		log.Panic("No assets found")
+	}
+
 	var cachedSlice []*asset.Asset
 	err := json.Unmarshal([]byte(assets.(string)), &cachedSlice)
 
 	if err != nil {
-		log.Panic("Bybit liveKlines unMarshal: ", err)
+		log.Panic("BBSKT Unmarshal: ", err)
 	}
 
 	log.Println("Syncronizing Klines")

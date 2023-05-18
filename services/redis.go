@@ -17,10 +17,14 @@ func (r *Redis) InitCache() {
 	assets := r.AssetRepo.List(nil, conn)
 	conn.Close()
 
+	if len(assets) == 0 {
+		log.Panic("redis marshal 01: asset list is empty")
+	}
+
 	b, err := json.Marshal(assets)
 
 	if err != nil {
-		log.Panic("redis marshal: ", err)
+		log.Panic("redis marshal 02 : ", err)
 	}
 
 	r.Client.Set(context.TODO(), "Assets", b, 0)
@@ -70,7 +74,7 @@ func (r *Redis) GetCache(key, primitiveType string) (val any) {
 		}
 	case "string":
 		if cachedVal == "" {
-			return
+			return ""
 		}
 
 		return cachedVal
